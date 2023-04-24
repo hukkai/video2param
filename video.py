@@ -53,10 +53,10 @@ image_caption_model = ImageCaptioning(device='cuda:1', captioner_base_model='bli
 dense_caption_model = DenseCaptioning(device='cuda:2')
 gpt_model = ImageToText(openai_key)
 
-video, (W, H), index, num_frames = read_video('cxk.mp4')
+video, (W, H), index, num_frames = read_video('cxk.mp4', sampled_frames=5)
 image_caption = image_caption_model.video_caption(video)
 dense_caption = dense_caption_model.video_dense_caption(video)
 dense_caption = parse_dense_caption(dense_caption)
-generated_text = gpt_model.paragraph_summary_with_gpt(num_frames, W, H, index, image_caption, dense_caption)
+generated_text = gpt_model.paragraph_summary_with_gpt(num_frames, W, H, index, image_caption, dense_caption, True)
 print(generated_text)
 
