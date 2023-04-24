@@ -5,10 +5,14 @@ import time
 import cv2
 import tqdm
 import sys
+import torch
+
 
 from detectron2.config import get_cfg
 from detectron2.data.detection_utils import read_image
 from detectron2.utils.logger import setup_logger
+from detectron2.modeling import build_model
+from detectron2.checkpoint import DetectionCheckpointer
 
 sys.path.insert(0, 'models/grit_src/third_party/CenterNet2/projects/CenterNet2/')
 from centernet.config import add_centernet_config
@@ -67,3 +71,17 @@ def image_caption_api(image_src, device):
         predictions, visualized_output = demo.run_on_image(img)
         new_caption = dense_pred_to_caption(predictions)
     return new_caption
+
+
+@torch.no_grad()
+def video_caption_api(video, device):
+    # video (torch.tensor): T, C, H, W
+    args2 = get_parser(device)
+    cfg = setup_cfg(args2)
+    model = build_model(cfg)
+    DetectionCheckpointer(model).load(cfg.MODEL.WEIGHTS)
+    model.eval()
+    inputs = [{'image': image} for image in video]
+    outputs = model(inputs)
+    return [dense_pred_to_caption(out) for out in outputs]
+

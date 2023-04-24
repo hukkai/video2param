@@ -1,5 +1,5 @@
 import os
-from models.grit_src.image_dense_captions import image_caption_api
+from models.grit_src.image_dense_captions import image_caption_api, video_caption_api
 
 class DenseCaptioning():
     def __init__(self, device, verbose=False):
@@ -26,4 +26,15 @@ class DenseCaptioning():
             print(dense_caption)
             print('\033[1;35m' + '*' * 100 + '\033[0m')
         return dense_caption
+
+    def video_dense_caption(self, video):
+        # video (torch.tensor): T, C, H, W
+        dense_caption = video_caption_api(video, self.device)
+        if self.verbose:
+            print('\033[1;35m' + '*' * 100 + '\033[0m')
+            print("Step2, Dense Caption:\n")
+            print(dense_caption)
+            print('\033[1;35m' + '*' * 100 + '\033[0m')
+        return dense_caption
+    
     

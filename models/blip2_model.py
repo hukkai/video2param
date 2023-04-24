@@ -31,18 +31,41 @@ class ImageCaptioning:
         model.to(self.device)
         return processor, model
 
-    def image_caption(self, image_src):
-        image = Image.open(image_src)
-        image = resize_long_edge(image, 384)
-        inputs = self.processor(images=image, return_tensors="pt").to(self.device, self.data_type)
+    def image_caption(self, image_list):
+        if type(image_list) == 'str':
+            image_list = [image_list]
+            single_input = True
+        else:
+            single_input = False
+        images = [Image.open(image) for image in image_list]
+        images = [resize_long_edge(image, 384) for image in images]
+        inputs = self.processor(images=images, return_tensors="pt").to(self.device, self.data_type)
         generated_ids = self.model.generate(**inputs)
-        generated_text = self.processor.batch_decode(generated_ids, skip_special_tokens=True)[0].strip()
+        generated_texts = self.processor.batch_decode(generated_ids, skip_special_tokens=True)
+        generated_texts = [text.strip() for text in generated_texts]
         if self.verbose:
             print('\033[1;35m' + '*' * 100 + '\033[0m')
             print('\nStep1, BLIP2 caption:')
-            print(generated_text)
+            for idx, text in generated_text:
+                print(f'Frame {idx} caption: {text}')
             print('\033[1;35m' + '*' * 100 + '\033[0m')
-        return generated_text
+        if single_input:
+            return generated_texts[0]
+        return generated_texts
+
+    def video_caption(self, video):
+        images = [Image.fromarray(frame.permute(1,2,0).numpy()) for frame in video]
+        inputs = self.processor(images=images, return_tensors="pt").to(self.device, self.data_type)
+        generated_ids = self.model.generate(**inputs)
+        generated_texts = self.processor.batch_decode(generated_ids, skip_special_tokens=True)
+        generated_texts = [text.strip() for text in generated_texts]
+        if self.verbose:
+            print('\033[1;35m' + '*' * 100 + '\033[0m')
+            print('\nStep1, BLIP2 caption:')
+            for idx, text in generated_text:
+                print(f'Frame {idx} caption: {text}')
+            print('\033[1;35m' + '*' * 100 + '\033[0m')
+        return generated_texts
     
     def image_caption_debug(self, image_src):
         return "A dish with salmon, broccoli, and something yellow."

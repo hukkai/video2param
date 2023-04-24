@@ -20,6 +20,7 @@ class GRiT(GeneralizedRCNN):
         ret = super().from_config(cfg)
         return ret
 
+    @torch.no_grad()
     def inference(
         self,
         batched_inputs: Tuple[Dict[str, torch.Tensor]],
@@ -28,18 +29,27 @@ class GRiT(GeneralizedRCNN):
     ):
         assert not self.training
         assert detected_instances is None
+        num_images = len(batched_inputs)
 
         images = self.preprocess_image(batched_inputs)
         features = self.backbone(images.tensor)
         proposals, _ = self.proposal_generator(images, features, None)
-        results, _ = self.roi_heads(features, proposals)
-        if do_postprocess:
-            assert not torch.jit.is_scripting(), \
-                "Scripting is not supported for postprocess."
-            return GRiT._postprocess(
-                results, batched_inputs, images.image_sizes)
-        else:
-            return results
+        results = []
+        for idx in range(num_images):
+            feature = dict(p3=features['p3'][idx:idx+1],
+                           p4=features['p4'][idx:idx+1],
+                           p5=features['p5'][idx:idx+1],
+                           p6=features['p6'][idx:idx+1],
+                           p7=features['p7'][idx:idx+1],)
+            result, _ = self.roi_heads(feature, proposals[idx:idx+1])
+            if do_postprocess:
+                assert not torch.jit.is_scripting(), \
+                    "Scripting is not supported for postprocess."
+                result = GRiT._postprocess(result, 
+                                         batched_inputs[idx:idx+1], 
+                                         images.image_sizes[idx:idx+1])
+            results += result
+        return results
 
     def forward(self, batched_inputs: List[Dict[str, torch.Tensor]]):
         if not self.training:
