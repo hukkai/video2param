@@ -6,7 +6,7 @@ from models.grit_model import DenseCaptioning
 from models.gpt_model_video import ImageToText
 
 
-openai_key = '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'
+openai_key = 'YOUR_key'
 
 def read_video(video_path, sampled_frames=10, longer_side=384):
     reader = decord.VideoReader(video_path)
